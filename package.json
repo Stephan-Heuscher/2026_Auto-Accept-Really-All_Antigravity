@@ -1,0 +1,36 @@
+{
+    "name": "antigravity-auto-accept-all",
+    "displayName": "Antigravity Auto Accept All",
+    "description": "Automatically accepts all Antigravity agent steps without limits. Based on pesosz's extension.",
+    "version": "1.0.0",
+    "publisher": "steph",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Stephan-Heuscher/2026_Auto-Accept-Really-All_Antigravity.git"
+    },
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./extension.js",
+    "categories": [
+        "Other"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "antigravity-auto-accept-all.toggle",
+                "title": "Toggle Antigravity Auto Accept All"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "antigravity-auto-accept-all.toggle",
+                "key": "ctrl+alt+shift+u",
+                "mac": "cmd+alt+shift+u"
+            }
+        ]
+    }
+}
