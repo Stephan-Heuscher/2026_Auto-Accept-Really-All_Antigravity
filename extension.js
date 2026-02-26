@@ -2,6 +2,7 @@ const vscode = require('vscode');
 
 let autoAcceptInterval = null;
 let enabled = true;
+let debugRunning = false;
 let statusBarItem;
 let outputChannel;
 
@@ -26,8 +27,6 @@ const ACCEPT_COMMANDS = [
     'workbench.action.acceptSelectedQuickOpenItem',   // Accept selected quick-open item
     'workbench.action.alternativeAcceptSelectedQuickOpenItem', // Alt-accept quick-open item
 ];
-
-
 
 function log(msg) {
     const timestamp = new Date().toISOString().slice(11, 23);
@@ -55,21 +54,91 @@ async function discoverAcceptCommands() {
         }
         log('================================');
         log('');
+        return acceptRelated.sort();
     } catch (e) {
         log(`❌ Failed to discover commands: ${e.message}`);
+        return [];
     }
+}
+
+// ============================================================
+// DEBUG: Sequential test — fires ALL discovered accept commands
+// one by one with delays so you can see which one dismisses
+// the terminal execution OK dialog.
+// ============================================================
+async function debugSequentialTest() {
+    if (debugRunning) {
+        log('⚠️ Debug test already running, skipping');
+        return;
+    }
+    debugRunning = true;
+
+    // Pause auto-accept loop during debug
+    const wasEnabled = enabled;
+    enabled = false;
+    updateStatusBar();
+
+    // Show the output channel so user can watch live
+    outputChannel.show(true);
+
+    log('');
+    log('🔬 ═══════════════════════════════════════════════════════');
+    log('🔬  DEBUG SEQUENTIAL TEST');
+    log('🔬  Firing ALL accept commands one by one...');
+    log('🔬  Watch which command dismisses your dialog!');
+    log('🔬  The one that triggers will show ✅ or cause a change.');
+    log('🔬 ═══════════════════════════════════════════════════════');
+    log('');
+
+    // Get all discovered accept-related commands
+    const allCommands = await vscode.commands.getCommands(true);
+    const acceptCommands = allCommands.filter(c =>
+        c.toLowerCase().includes('accept')
+    ).sort();
+
+    log(`📋 Testing ${acceptCommands.length} accept commands...\n`);
+
+    for (let i = 0; i < acceptCommands.length; i++) {
+        const cmd = acceptCommands[i];
+        const num = String(i + 1).padStart(2, ' ');
+        try {
+            log(`  [${num}/${acceptCommands.length}] 🔄 FIRING: ${cmd}`);
+            const result = await vscode.commands.executeCommand(cmd);
+            if (result !== undefined && result !== null) {
+                log(`  [${num}/${acceptCommands.length}] ✅ ← RETURNED VALUE: ${JSON.stringify(result)}`);
+            } else {
+                log(`  [${num}/${acceptCommands.length}] ⚪ ← no return value`);
+            }
+        } catch (e) {
+            log(`  [${num}/${acceptCommands.length}] ❌ ← ERROR: ${e.message}`);
+        }
+        // 500ms delay between commands so you can see which one worked
+        await new Promise(r => setTimeout(r, 500));
+    }
+
+    log('');
+    log('🔬 ═══════════════════════════════════════════════════════');
+    log('🔬  DEBUG TEST COMPLETE');
+    log('🔬  Check above: the command that dismissed your dialog');
+    log('🔬  is the one right BEFORE the dialog disappeared.');
+    log('🔬 ═══════════════════════════════════════════════════════');
+    log('');
+
+    // Restore auto-accept state
+    enabled = wasEnabled;
+    updateStatusBar();
+    debugRunning = false;
 }
 
 function activate(context) {
     // Create output channel for debugging
     outputChannel = vscode.window.createOutputChannel('Auto-Accept Debug');
     context.subscriptions.push(outputChannel);
-    // Output channel available but not forced open (use 'Auto-Accept Debug' in Output panel to view)
 
-    log('🚀 Auto-Accept All extension v1.7.0 activated!');
+    log('🚀 Auto-Accept All extension v1.8.0 activated!');
 
     // Register toggle command
-    let disposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
+    let toggleDisposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
         enabled = !enabled;
         updateStatusBar();
         if (enabled) {
@@ -80,7 +149,15 @@ function activate(context) {
             vscode.window.showInformationMessage('Auto-Accept: OFF 🛑');
         }
     });
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(toggleDisposable);
+
+    // Register debug test command
+    let debugDisposable = vscode.commands.registerCommand('antigravity-auto-accept-all.debugTest', function () {
+        log('🔬 Debug test triggered by user');
+        vscode.window.showInformationMessage('🔬 Debug: Testing all accept commands sequentially...');
+        debugSequentialTest();
+    });
+    context.subscriptions.push(debugDisposable);
 
     try {
         statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10000);
@@ -122,8 +199,6 @@ function startLoop() {
 
         loopCount++;
         const shouldLogDetail = (loopCount % 30 === 1); // Log details every ~10 seconds
-
-
 
         // Fire all accept commands
         for (const cmd of ACCEPT_COMMANDS) {
