@@ -60,7 +60,7 @@ function activate(context) {
     context.subscriptions.push(outputChannel);
     // Output channel available but not forced open (use 'Auto-Accept Debug' in Output panel to view)
 
-    log('🚀 Auto-Accept All extension v1.5.0 activated!');
+    log('🚀 Auto-Accept All extension v1.6.0 activated!');
 
     // Register toggle command
     let disposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
