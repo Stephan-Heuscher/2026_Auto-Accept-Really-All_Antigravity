@@ -36,12 +36,12 @@ function log(msg) {
 async function discoverAcceptCommands() {
     try {
         const allCommands = await vscode.commands.getCommands(true);
-        const acceptRelated = allCommands.filter(c =>
-            c.toLowerCase().includes('accept') ||
-            c.toLowerCase().includes('approve') ||
-            c.toLowerCase().includes('agent')
-        );
-        log('=== DISCOVERED COMMANDS (accept/approve/agent related) ===');
+        const searchTerms = ['accept', 'approve', 'agent', 'confirm', 'submit', 'run', 'yes', 'ok', 'primary', 'chat', 'panel', 'webview', 'terminal'];
+        const acceptRelated = allCommands.filter(c => {
+            const lower = c.toLowerCase();
+            return searchTerms.some(term => lower.includes(term));
+        });
+        log('=== DISCOVERED COMMANDS (expanded search) ===');
         acceptRelated.sort().forEach(c => log(`  📌 ${c}`));
         log(`=== Total: ${acceptRelated.length} commands ===`);
         log('');
@@ -90,17 +90,19 @@ async function debugSequentialTest() {
     log('🔬 ═══════════════════════════════════════════════════════');
     log('');
 
-    // Get all discovered accept-related commands
+    // Get all discovered commands using the expanded search terms
     const allCommands = await vscode.commands.getCommands(true);
-    const acceptCommands = allCommands.filter(c =>
-        c.toLowerCase().includes('accept')
-    ).sort();
+    const searchTerms = ['accept', 'approve', 'agent', 'confirm', 'submit', 'run', 'yes', 'ok', 'primary', 'chat', 'panel', 'webview', 'terminal'];
+    const acceptCommands = allCommands.filter(c => {
+        const lower = c.toLowerCase();
+        return searchTerms.some(term => lower.includes(term));
+    }).sort();
 
-    log(`📋 Testing ${acceptCommands.length} accept commands...\n`);
+    log(`📋 Testing ${acceptCommands.length} commands...\n`);
 
     for (let i = 0; i < acceptCommands.length; i++) {
         const cmd = acceptCommands[i];
-        const num = String(i + 1).padStart(2, ' ');
+        const num = String(i + 1).padStart(3, ' ');
         try {
             log(`  [${num}/${acceptCommands.length}] 🔄 FIRING: ${cmd}`);
             const result = await vscode.commands.executeCommand(cmd);
@@ -112,8 +114,8 @@ async function debugSequentialTest() {
         } catch (e) {
             log(`  [${num}/${acceptCommands.length}] ❌ ← ERROR: ${e.message}`);
         }
-        // 500ms delay between commands so you can see which one worked
-        await new Promise(r => setTimeout(r, 500));
+        // 200ms delay between commands so it doesn't take forever, but long enough to see effect
+        await new Promise(r => setTimeout(r, 200));
     }
 
     log('');
@@ -135,7 +137,7 @@ function activate(context) {
     outputChannel = vscode.window.createOutputChannel('Auto-Accept Debug');
     context.subscriptions.push(outputChannel);
 
-    log('🚀 Auto-Accept All extension v1.8.0 activated!');
+    log('🚀 Auto-Accept All extension v1.8.1 activated!');
 
     // Register toggle command
     let toggleDisposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {

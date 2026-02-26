@@ -2,7 +2,7 @@
     "name": "antigravity-auto-accept-all",
     "displayName": "Antigravity Auto Accept All",
     "description": "Automatically accepts all Antigravity agent steps without limits. Based on pesosz's extension.",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "publisher": "steph",
     "repository": {
         "type": "git",
