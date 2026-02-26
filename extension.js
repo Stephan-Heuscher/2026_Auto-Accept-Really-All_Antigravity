@@ -5,9 +5,9 @@ let enabled = true;
 let statusBarItem;
 let outputChannel;
 
-// Commands to try accepting — all Antigravity accept commands + key general ones
+// Commands to try accepting — Tier 1 (Agent & Core) + Tier 2 (UI Dialogs & Prompts)
 const ACCEPT_COMMANDS = [
-    // Antigravity-specific accepts
+    // === Tier 1: Agent & Core (most important, fire first) ===
     'antigravity.agent.acceptAgentStep',              // Accept individual agent step
     'antigravity.terminalCommand.accept',             // Accept terminal command
     'antigravity.command.accept',                     // Accept command
@@ -15,10 +15,16 @@ const ACCEPT_COMMANDS = [
     'antigravity.prioritized.agentAcceptAllInFile',   // Accept all changes in current file
     'antigravity.prioritized.agentAcceptFocusedHunk', // Accept focused hunk
     'antigravity.prioritized.supercompleteAccept',    // Accept supercomplete suggestion
-    // General accepts
     'chatEditing.acceptAllFiles',                     // Accept all file changes from chat
-    'notification.acceptPrimaryAction',               // Accept notification prompts
+    'chatEditing.acceptFile',                         // Accept single file change from chat
     'inlineChat.acceptChanges',                       // Accept inline chat suggestions
+
+    // === Tier 2: UI Dialogs & Prompts ===
+    'quickInput.accept',                              // Accept any open quick-pick/input dialog
+    'quickInput.acceptInBackground',                  // Accept quick-input without closing
+    'notification.acceptPrimaryAction',               // Accept notification prompts
+    'workbench.action.acceptSelectedQuickOpenItem',   // Accept selected quick-open item
+    'workbench.action.alternativeAcceptSelectedQuickOpenItem', // Alt-accept quick-open item
 ];
 
 
@@ -60,7 +66,7 @@ function activate(context) {
     context.subscriptions.push(outputChannel);
     // Output channel available but not forced open (use 'Auto-Accept Debug' in Output panel to view)
 
-    log('🚀 Auto-Accept All extension v1.6.0 activated!');
+    log('🚀 Auto-Accept All extension v1.7.0 activated!');
 
     // Register toggle command
     let disposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
