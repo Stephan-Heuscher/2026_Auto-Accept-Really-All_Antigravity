@@ -98,7 +98,26 @@ async function debugSequentialTest() {
         return searchTerms.some(term => lower.includes(term));
     }).sort();
 
-    log(`📋 Testing ${acceptCommands.length} commands...\n`);
+    log(`📋 Testing ${acceptCommands.length + 1} commands...\n`);
+
+    // ============================================
+    // SPECIAL TEST: Focus Terminal then Accept
+    // ============================================
+    try {
+        log(`  [SPECIAL] 🔄 FIRING: workbench.action.terminal.focus THEN antigravity.terminalCommand.accept`);
+        await vscode.commands.executeCommand('workbench.action.terminal.focus');
+        const r1 = await vscode.commands.executeCommand('antigravity.terminalCommand.accept');
+        const r2 = await vscode.commands.executeCommand('antigravity.terminalCommand.run');
+        if (r1 !== undefined || r2 !== undefined) {
+            log(`  [SPECIAL] ✅ ← RETURNED VALUES: accept=${JSON.stringify(r1)}, run=${JSON.stringify(r2)}`);
+        } else {
+            log(`  [SPECIAL] ⚪ ← no return value`);
+        }
+        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+    } catch (e) {
+        log(`  [SPECIAL] ❌ ← ERROR: ${e.message}`);
+    }
+    await new Promise(r => setTimeout(r, 600));
 
     for (let i = 0; i < acceptCommands.length; i++) {
         const cmd = acceptCommands[i];
@@ -137,7 +156,7 @@ function activate(context) {
     outputChannel = vscode.window.createOutputChannel('Auto-Accept Debug');
     context.subscriptions.push(outputChannel);
 
-    log('🚀 Auto-Accept All extension v1.8.1 activated!');
+    log('🚀 Auto-Accept All extension v1.8.2 activated!');
 
     // Register toggle command
     let toggleDisposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
