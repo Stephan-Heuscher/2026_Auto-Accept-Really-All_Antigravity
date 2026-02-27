@@ -36,12 +36,11 @@ function log(msg) {
 async function discoverAcceptCommands() {
     try {
         const allCommands = await vscode.commands.getCommands(true);
-        const searchTerms = ['accept', 'approve', 'agent', 'confirm', 'submit', 'run', 'yes', 'ok', 'primary', 'chat', 'panel', 'webview', 'terminal'];
         const acceptRelated = allCommands.filter(c => {
             const lower = c.toLowerCase();
-            return searchTerms.some(term => lower.includes(term));
+            return (lower.includes('accept') || lower.includes('approve')) && !lower.includes('orientation');
         });
-        log('=== DISCOVERED COMMANDS (expanded search) ===');
+        log('=== DISCOVERED COMMANDS ===');
         acceptRelated.sort().forEach(c => log(`  📌 ${c}`));
         log(`=== Total: ${acceptRelated.length} commands ===`);
         log('');
@@ -62,9 +61,7 @@ async function discoverAcceptCommands() {
 }
 
 // ============================================================
-// DEBUG: Sequential test — fires ALL discovered accept commands
-// one by one with delays so you can see which one dismisses
-// the terminal execution OK dialog.
+// DEBUG: Sequential test
 // ============================================================
 async function debugSequentialTest() {
     if (debugRunning) {
@@ -84,40 +81,17 @@ async function debugSequentialTest() {
     log('');
     log('🔬 ═══════════════════════════════════════════════════════');
     log('🔬  DEBUG SEQUENTIAL TEST');
-    log('🔬  Firing ALL accept commands one by one...');
-    log('🔬  Watch which command dismisses your dialog!');
-    log('🔬  The one that triggers will show ✅ or cause a change.');
+    log('🔬  Firing strictly accept commands one by one...');
     log('🔬 ═══════════════════════════════════════════════════════');
     log('');
 
-    // Get all discovered commands using the expanded search terms
     const allCommands = await vscode.commands.getCommands(true);
-    const searchTerms = ['accept', 'approve', 'agent', 'confirm', 'submit', 'run', 'yes', 'ok', 'primary', 'chat', 'panel', 'webview', 'terminal'];
     const acceptCommands = allCommands.filter(c => {
         const lower = c.toLowerCase();
-        return searchTerms.some(term => lower.includes(term));
+        return (lower.includes('accept') || lower.includes('approve')) && !lower.includes('orientation');
     }).sort();
 
-    log(`📋 Testing ${acceptCommands.length + 1} commands...\n`);
-
-    // ============================================
-    // SPECIAL TEST: Focus Terminal then Accept
-    // ============================================
-    try {
-        log(`  [SPECIAL] 🔄 FIRING: workbench.action.terminal.focus THEN antigravity.terminalCommand.accept`);
-        await vscode.commands.executeCommand('workbench.action.terminal.focus');
-        const r1 = await vscode.commands.executeCommand('antigravity.terminalCommand.accept');
-        const r2 = await vscode.commands.executeCommand('antigravity.terminalCommand.run');
-        if (r1 !== undefined || r2 !== undefined) {
-            log(`  [SPECIAL] ✅ ← RETURNED VALUES: accept=${JSON.stringify(r1)}, run=${JSON.stringify(r2)}`);
-        } else {
-            log(`  [SPECIAL] ⚪ ← no return value`);
-        }
-        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
-    } catch (e) {
-        log(`  [SPECIAL] ❌ ← ERROR: ${e.message}`);
-    }
-    await new Promise(r => setTimeout(r, 600));
+    log(`📋 Testing ${acceptCommands.length} safe commands...\n`);
 
     for (let i = 0; i < acceptCommands.length; i++) {
         const cmd = acceptCommands[i];
@@ -156,7 +130,7 @@ function activate(context) {
     outputChannel = vscode.window.createOutputChannel('Auto-Accept Debug');
     context.subscriptions.push(outputChannel);
 
-    log('🚀 Auto-Accept All extension v1.8.2 activated!');
+    log('🚀 Auto-Accept All extension v1.8.3 activated!');
 
     // Register toggle command
     let toggleDisposable = vscode.commands.registerCommand('antigravity-auto-accept-all.toggle', function () {
